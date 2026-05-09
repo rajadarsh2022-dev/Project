@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - SISTec IoT Application 2026</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+  <nav class="bg-blue-600 text-white p-4">
+    <div class="container mx-auto flex justify-between">
+      <h1 class="text-xl">SISTec IoT Application 2026</h1>
+      <span id="username">Loading...</span>
+    </div>
+  </nav>
+  <div class="container mx-auto p-4">
+    <h2 class="text-2xl mb-4">Dashboard</h2>
+
+    <!-- Section 1 -->
+    <div class="grid grid-cols-2 gap-4 mb-8">
+      <div class="bg-white p-4 rounded shadow">
+        <h3 class="text-lg">Latest Temperature</h3>
+        <p id="latest-temp" class="text-4xl">Loading...</p>
+        <p id="latest-temp-time" class="text-sm"></p>
+      </div>
+      <div class="bg-white p-4 rounded shadow">
+        <h3 class="text-lg">Latest Humidity</h3>
+        <p id="latest-hum" class="text-4xl">Loading...</p>
+        <p id="latest-hum-time" class="text-sm"></p>
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="bg-white p-4 rounded shadow mb-8">
+      <h3 class="text-lg mb-4">Save LCD Text</h3>
+      <form action="/save-lcd-text" method="POST">
+        <input type="text" name="text" maxlength="16" placeholder="Enter text (max 16 chars)" class="w-full p-2 border mb-4" required>
+        <button type="submit" class="bg-blue-500 text-white p-2">Submit</button>
+      </form>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="bg-white p-4 rounded shadow">
+      <h3 class="text-lg mb-4">Sensor Records</h3>
+      <table class="w-full table-auto">
+        <thead>
+          <tr>
+            <th class="border p-2">#</th>
+            <th class="border p-2">Temperature</th>
+            <th class="border p-2">Humidity</th>
+            <th class="border p-2">Time</th>
+            <th class="border p-2">Date</th>
+            <th class="border p-2">Action</th>
+          </tr>
+        </thead>
+        <tbody id="records-table">
+          <!-- Rows will be added by JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Get username from cookie
+    const username = document.cookie.split('; ').find(row => row.startsWith('user=')).split('=')[1];
+    document.getElementById('username').textContent = username;
+
+    // Fetch latest data
+    fetch('/api/latest-data')
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('latest-temp').textContent = data.temp;
+        document.getElementById('latest-hum').textContent = data.hum;
+        document.getElementById('latest-temp-time').textContent = data.time + ' ' + data.date;
+        document.getElementById('latest-hum-time').textContent = data.time + ' ' + data.date;
+      });
+
+    // Fetch all data
+    fetch('/api/all-data')
+      .then(res => res.json())
+      .then(data => {
+        const tbody = document.getElementById('records-table');
+        data.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="border p-2">${row.num}</td>
+            <td class="border p-2">${row.temp}</td>
+            <td class="border p-2">${row.hum}</td>
+            <td class="border p-2">${row.time}</td>
+            <td class="border p-2">${row.date}</td>
+            <td class="border p-2">
+              <form action="/delete-data/${row.id}" method="POST" style="display:inline;">
+                <button type="submit" class="bg-red-500 text-white p-1">Delete</button>
+              </form>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      });
+  </script>
+</body>
+</html>
