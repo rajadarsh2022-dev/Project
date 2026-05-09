@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - SISTec IoT Application 2026</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-100">
   <nav class="bg-blue-600 text-white p-4">
@@ -17,7 +18,7 @@
     <h2 class="text-2xl mb-4">Dashboard</h2>
 
     <!-- Section 1 -->
-    <div class="grid grid-cols-2 gap-4 mb-8">
+    <div class="grid grid-cols-3 gap-4 mb-8">
       <div class="bg-white p-4 rounded shadow">
         <h3 class="text-lg">Latest Temperature</h3>
         <p id="latest-temp" class="text-4xl">Loading...</p>
@@ -27,6 +28,25 @@
         <h3 class="text-lg">Latest Humidity</h3>
         <p id="latest-hum" class="text-4xl">Loading...</p>
         <p id="latest-hum-time" class="text-sm"></p>
+      </div>
+      <div class="bg-white p-4 rounded shadow">
+        <h3 class="text-lg">Latest Soil Moisture</h3>
+        <p id="latest-soil" class="text-4xl">Loading...</p>
+        <p id="latest-soil-time" class="text-sm"></p>
+      </div>
+    </div>
+    <div class="grid grid-cols-3 gap-4 mb-8">
+      <div class="bg-white p-4 rounded shadow">
+        <h3 class="text-lg mb-4">Temperature vs Time</h3>
+        <canvas id="chart-temp"></canvas>
+      </div>
+      <div class="bg-white p-4 rounded shadow">
+        <h3 class="text-lg mb-4">Humidity vs Time</h3>
+        <canvas id="chart-hum"></canvas>
+      </div>
+      <div class="bg-white p-4 rounded shadow">
+        <h3 class="text-lg mb-4">Soil Moisture vs Time</h3>
+        <canvas id="chart-soil"></canvas>
       </div>
     </div>
 
@@ -48,6 +68,7 @@
             <th class="border p-2">#</th>
             <th class="border p-2">Temperature</th>
             <th class="border p-2">Humidity</th>
+            <th class="border p-2">Soil Moisture</th>
             <th class="border p-2">Time</th>
             <th class="border p-2">Date</th>
             <th class="border p-2">Action</th>
@@ -71,8 +92,10 @@
       .then(data => {
         document.getElementById('latest-temp').textContent = data.temp;
         document.getElementById('latest-hum').textContent = data.hum;
+        document.getElementById('latest-soil').textContent = data.soil;
         document.getElementById('latest-temp-time').textContent = data.time + ' ' + data.date;
         document.getElementById('latest-hum-time').textContent = data.time + ' ' + data.date;
+        document.getElementById('latest-soil-time').textContent = data.time + ' ' + data.date;
       });
 
     // Fetch all data
@@ -80,12 +103,25 @@
       .then(res => res.json())
       .then(data => {
         const tbody = document.getElementById('records-table');
+        const labels = [];
+        const tempData = [];
+        const humData = [];
+        const soilData = [];
+
+        data.reverse().forEach(row => {
+          labels.push(row.time);
+          tempData.push(parseFloat(row.temp));
+          humData.push(parseFloat(row.hum));
+          soilData.push(parseFloat(row.rawSoil || 0));
+        });
+
         data.forEach(row => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td class="border p-2">${row.num}</td>
             <td class="border p-2">${row.temp}</td>
             <td class="border p-2">${row.hum}</td>
+            <td class="border p-2">${row.soil}</td>
             <td class="border p-2">${row.time}</td>
             <td class="border p-2">${row.date}</td>
             <td class="border p-2">
@@ -95,6 +131,48 @@
             </td>
           `;
           tbody.appendChild(tr);
+        });
+
+        new Chart(document.getElementById('chart-temp'), {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Temperature (°C)',
+              data: tempData,
+              borderColor: '#2563eb',
+              backgroundColor: 'rgba(37, 99, 235, 0.2)',
+              fill: true
+            }]
+          }
+        });
+
+        new Chart(document.getElementById('chart-hum'), {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Humidity (%)',
+              data: humData,
+              borderColor: '#059669',
+              backgroundColor: 'rgba(5, 150, 105, 0.2)',
+              fill: true
+            }]
+          }
+        });
+
+        new Chart(document.getElementById('chart-soil'), {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Soil Moisture (%)',
+              data: soilData,
+              borderColor: '#ca8a04',
+              backgroundColor: 'rgba(202, 138, 4, 0.2)',
+              fill: true
+            }]
+          }
         });
       });
   </script>

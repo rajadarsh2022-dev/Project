@@ -7,6 +7,7 @@
 // Pins
 #define DHTPIN D5
 #define DHTTYPE DHT11
+#define SOILPIN A0
 
 // LCD
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -52,6 +53,8 @@ void setup() {
 void loop() {
   float temp = dht.readTemperature();
   float hum = dht.readHumidity();
+  int soilRaw = analogRead(SOILPIN);
+  float soil = ((1023 - soilRaw) * 100.0) / 1023.0;
 
   // Display Temperature
   lcd.clear();
@@ -67,6 +70,14 @@ void loop() {
   lcd.print("HUMIDITY");
   lcd.setCursor(0, 1);
   lcd.print(String(hum) + "%");
+  delay(2000);
+
+  // Display Soil Moisture
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("SOIL MOISTURE");
+  lcd.setCursor(0, 1);
+  lcd.print(String(soil, 0) + "%");
   delay(2000);
 
   // Fetch and display LCD text
@@ -99,7 +110,7 @@ void loop() {
     WiFiClientSecure client;
     client.setInsecure();
     HTTPClient http;
-    String url = String(serverUrl) + "/save-data?temp=" + String(temp) + "&hum=" + String(hum);
+    String url = String(serverUrl) + "/save-data?temp=" + String(temp) + "&hum=" + String(hum) + "&soil=" + String(soil, 0);
     http.begin(client, url);
     int httpCode = http.GET();
     if (httpCode > 0) {
